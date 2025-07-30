@@ -2,7 +2,7 @@
   "name": "taskextreme-ai-backend",
   "version": "1.0.0",
   "description": "AI Task Generator Backend for TaskExtreme",
-  "main": "scripts/ai task generator.js",
+  "main": "scripts/ai-task-generator.js",
   "scripts": {
   "start": "node scripts/ai-task-generator.js",
   "dev": "nodemon scripts/ai-task-generator.js"
