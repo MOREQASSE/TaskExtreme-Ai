@@ -4,8 +4,10 @@
   "description": "AI Task Generator Backend for TaskExtreme",
   "main": "scripts/ai-task-generator.js",
   "scripts": {
-  "start": "node scripts/ai-task-generator.js",
-  "dev": "nodemon scripts/ai-task-generator.js"
+    "start": "node scripts/ai-task-generator.js",
+    "dev": "nodemon scripts/ai-task-generator.js",
+    "build": "echo 'No build step required'",
+    "vercel-build": "echo 'No build step required'"
   },
   "dependencies": {
     "express": "^4.18.2",

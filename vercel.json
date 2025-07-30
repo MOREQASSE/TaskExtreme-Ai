@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/ai-generate-tasks.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/ai-generate-tasks",
+      "dest": "/api/ai-generate-tasks.js"
+    }
+  ],
+  "env": {
+    "GITHUB_TOKEN": "@github_token"
+  }
+} 
