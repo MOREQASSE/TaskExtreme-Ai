@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TaskExtreme</title>
+  <link rel="stylesheet" href="./styles/main.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script> <!--PDF generation js library-->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script><!--PDF Tables and rows formation js library-->
+  <style>
+    html {
+        scroll-behavior: smooth;
+    }
+    .styled-upload {
+        display: flex;
+        align-items: center;
+        border: 2px dashed #bbb;
+        border-radius: 8px;
+        padding: 10px 16px;
+        background: #fafbfc;
+        cursor: pointer;
+        transition: border-color 0.2s;
+        margin-bottom: 8px;
+    }
+    .styled-upload.dragover {
+        border-color: #007bff;
+        background: #e6f0ff;
+    }
+    .file-upload-icon {
+        font-size: 1.5em;
+        margin-right: 12px;
+    }
+    .file-upload-input {
+        display: none;
+    }
+    .file-upload-text {
+        flex: 1;
+    }
+    .file-name {
+        font-weight: 500;
+        color: #333;
+    }
+    .file-hint {
+        font-size: 0.9em;
+        color: #888;
+    }
+</style>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="topnav">
+        <a class="active" href="#home"><b>Home</b></a>
+        <a href="#calendar-section"><b>Calendar</b></a>
+        <a href="#tools-section"><b>Tools</b></a>
+        <a href="#footer-contact"><b>Contact</b></a>
+        <a href="#donate-section"><b>Donate</b></a>
+    </nav>
+    
+    <!-- Streak Counter -->
+    <div class="streak-counter" id="streak-counter"></div>
+    
+    <!-- Main Navigation Bar -->
+    <header class="navbar">
+        <div class="navbar-content">
+            <!-- Logo -->
+            <div class="navbar-left">
+                <img src="images/icon.png" alt="TaskExtreme Logo" class="logo-icon" style="height: 6em; vertical-align: middle;" />
+            </div>
+            
+            <!-- Date Navigation -->
+            <div class="navbar-center">
+                <button id="prev-week" class="week-nav-btn" title="Previous Day">
+                    <span class="nav-icon">←</span>
+                </button>
+                <button id="today-btn" class="today-btn" title="Go to Today">
+                    <span class="today-text">Today</span>
+                </button>
+                <div class="date-display" id="current-date-display"></div>
+                <button id="next-week" class="week-nav-btn" title="Next Day">
+                    <span class="nav-icon">→</span>
+                </button>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="navbar-right">
+                <button id="generate-pdf" class="action-btn pdf-btn" title="Generate PDF of tasks of the day">
+                    <span class="btn-icon">📄</span>
+                    <span class="btn-text">Download PDF</span>
+                </button>
+                <div class="theme-dropdown">
+                    <button id="theme-dropdown-btn" class="theme-dropdown-btn" title="Select Theme">
+                        <span class="btn-text">Light Mode</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div id="theme-dropdown-menu" class="theme-dropdown-menu">
+                        <div class="theme-option" data-theme="light">
+                            <span class="theme-icon">☀️</span>
+                            <span class="theme-name">Light Mode</span>
+                            <span class="theme-description">Classic light</span>
+                        </div>
+                        <div class="theme-option" data-theme="dark">
+                            <span class="theme-icon">🌙</span>
+                            <span class="theme-name">Dark Mode</span>
+                            <span class="theme-description">Classic dark</span>
+                        </div>
+                        <div class="theme-option" data-theme="sunset">
+                            <span class="theme-icon">🌅</span>
+                            <span class="theme-name">Sunset Ocean</span>
+                            <span class="theme-description">Warm orange</span>
+                        </div>
+                        <div class="theme-option" data-theme="forest">
+                            <span class="theme-icon">🌲</span>
+                            <span class="theme-name">Forest Nature</span>
+                            <span class="theme-description">Green fresh</span>
+                        </div>
+                        <div class="theme-option" data-theme="galaxy">
+                            <span class="theme-icon">✨</span>
+                            <span class="theme-name">Purple Galaxy</span>
+                            <span class="theme-description">Cosmic purple</span>
+                        </div>
+                        <div class="theme-option" data-theme="minimalist">
+                            <span class="theme-icon">⚪</span>
+                            <span class="theme-name">Minimalist Gray</span>
+                            <span class="theme-description">Clean gray</span>
+                        </div>
+                        <div class="theme-option" data-theme="retro">
+                            <span class="theme-icon">🎮</span>
+                            <span class="theme-name">Retro 80s</span>
+                            <span class="theme-description">Vintage vibes</span>
+                        </div>
+                        <div class="theme-option" data-theme="coffee">
+                            <span class="theme-icon">☕</span>
+                            <span class="theme-name">Coffee Warm</span>
+                            <span class="theme-description">Cozy brown</span>
+                        </div>
+                        <div class="theme-option" data-theme="girly">
+                            <span class="theme-icon">🌸</span>
+                            <span class="theme-name">Girly Pink</span>
+                            <span class="theme-description">Sweet pink</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Progress Dashboard Section -->
+        <section id="progress-dashboard-section" class="card-section">
+            <div class="section-header">
+                <h2><span class="section-icon">📊</span> Progress Dashboard</h2>
+                <div class="dashboard-controls">
+                    <button id="refresh-dashboard" class="dashboard-refresh-btn" title="Refresh Dashboard">
+                        <span class="refresh-icon">🔄</span>
+                    </button>
+                    <button class="section-toggle collapsed" data-section="progress-dashboard">
+                        <span class="toggle-arrow">▶</span>
+                    </button>
+                </div>
+            </div>
+            <div class="section-content collapsed" id="progress-dashboard-content">
+                <!-- Dashboard Overview -->
+                <div class="dashboard-overview">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">✅</div>
+                            <div class="stat-content">
+                                <div class="stat-number" id="completed-today">0</div>
+                                <div class="stat-label">Completed Today</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📋</div>
+                            <div class="stat-content">
+                                <div class="stat-number" id="total-today">0</div>
+                                <div class="stat-label">Total Today</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🎯</div>
+                            <div class="stat-content">
+                                <div class="stat-number" id="completion-rate">0%</div>
+                                <div class="stat-label">Completion Rate</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🔥</div>
+                            <div class="stat-content">
+                                <div class="stat-number" id="current-streak">0</div>
+                                <div class="stat-label">Day Streak</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Charts -->
+                <div class="charts-section">
+                    <div class="chart-container">
+                        <h3>📈 Weekly Progress</h3>
+                        <div class="weekly-chart" id="weekly-chart">
+                            <div class="chart-bars">
+                                <div class="chart-bar" data-day="Mon" data-value="0">
+                                    <div class="bar-fill"></div>
+                                    <div class="bar-label">Mon</div>
+                                </div>
+                                <div class="chart-bar" data-day="Tue" data-value="0">
+                                    <div class="bar-fill"></div>
+                                    <div class="bar-label">Tue</div>
+                                </div>
+                                <div class="chart-bar" data-day="Wed" data-value="0">
+                                    <div class="bar-fill"></div>
+                                    <div class="bar-label">Wed</div>
+                                </div>
+                                <div class="chart-bar" data-day="Thu" data-value="0">
+                                    <div class="bar-fill"></div>
+                                    <div class="bar-label">Thu</div>
+                                </div>
+                                <div class="chart-bar" data-day="Fri" data-value="0">
+                                    <div class="bar-fill"></div>
+                                    <div class="bar-label">Fri</div>
+                                </div>
+                                <div class="chart-bar" data-day="Sat" data-value="0">
+                                    <div class="bar-fill"></div>
+                                    <div class="bar-label">Sat</div>
+                                </div>
+                                <div class="chart-bar" data-day="Sun" data-value="0">
+                                    <div class="bar-fill"></div>
+                                    <div class="bar-label">Sun</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <h3>🏷️ Category Breakdown</h3>
+                        <div class="category-chart" id="category-chart">
+                            <div class="category-items">
+                                <!-- Category items will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Achievements Section -->
+                <div class="achievements-section">
+                    <h3>🏆 Recent Achievements</h3>
+                    <div class="achievements-grid" id="achievements-grid">
+                        <!-- Achievements will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Productivity Tips -->
+                <div class="productivity-tips">
+                    <h3>💡 Productivity Tips</h3>
+                    <div class="tips-container" id="productivity-tips">
+                        <!-- Tips will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Task Form Section -->
+        <section id="task-form-section" class="card-section">
+            <div class="section-header">
+                <h2><span class="section-icon">📝</span> Add New Task</h2>
+                <button class="section-toggle collapsed" data-section="task-form">
+                    <span class="toggle-arrow">▶</span>
+                </button>
+            </div>
+            <div class="section-content collapsed" id="task-form-content">
+                <form id="task-form">
+                    <!-- Task Details Section -->
+                    <div class="form-section">
+                        <h3>Task Information</h3>
+                        <div class="form-row">
+                            <label for="task-title">Task Title *</label>
+                            <input type="text" id="task-title" placeholder="What needs to be done?" required />
+                        </div>
+                        <div class="form-row">
+                            <label for="task-details">Description</label>
+                            <textarea id="task-details" placeholder="Add any additional details, notes, or context..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Category & Priority Section -->
+                    <div class="form-section">
+                        <h3>🏷️ Category & Priority</h3>
+                        <div class="form-row category-priority-row">
+                            <div class="category-group">
+                                <label for="task-category">Category</label>
+                                <select id="task-category" required>
+                                    <option value="">Select a category</option>
+                                    <option value="work" data-color="#3b82f6">💼 Work</option>
+                                    <option value="personal" data-color="#10b981">👤 Personal</option>
+                                    <option value="health" data-color="#ef4444">🏥 Health</option>
+                                    <option value="education" data-color="#8b5cf6">📚 Education</option>
+                                    <option value="finance" data-color="#f59e0b">💰 Finance</option>
+                                    <option value="home" data-color="#06b6d4">🏠 Home</option>
+                                    <option value="social" data-color="#ec4899">👥 Social</option>
+                                    <option value="hobby" data-color="#84cc16">🎨 Hobby</option>
+                                </select>
+                            </div>
+                            <div class="priority-group">
+                                <label for="task-priority">Priority</label>
+                                <select id="task-priority" required>
+                                    <option value="">Select priority</option>
+                                    <option value="high" data-color="#ef4444">🔴 High</option>
+                                    <option value="medium" data-color="#f59e0b">🟡 Medium</option>
+                                    <option value="low" data-color="#10b981">🟢 Low</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Time & Date Section -->
+                    <div class="form-section">
+                        <h3>⏰ Time & Date</h3>
+                        <div class="form-row time-row">
+                            <div class="time-group">
+                                <label for="task-time-start">Start Time</label>
+                                <input type="time" id="task-time-start" />
+                            </div>
+                            <div class="time-separator">to</div>
+                            <div class="time-group">
+                                <label for="task-time-end">End Time</label>
+                                <input type="time" id="task-time-end" />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <label for="task-due-date">Due Date</label>
+                            <input type="date" id="task-due-date" />
+                        </div>
+                    </div>
+
+                    <!-- Scheduling Section -->
+                    <div class="form-section">
+                        <h3>📅 Scheduling</h3>
+                        <div class="scheduling-options">
+                            <div class="option-group">
+                                <label class="option-label">
+                                    <input type="radio" name="schedule-type" value="once" checked />
+                                    <span class="option-text">
+                                        <span class="option-icon">📌</span>
+                                        <span class="option-content">
+                                            <strong>One-time task</strong>
+                                            <small>Add to current date</small>
+                                        </span>
+                                    </span>
+                                </label>
+                            </div>
+                            
+                            <div class="option-group">
+                                <label class="option-label">
+                                    <input type="radio" name="schedule-type" value="everyday" />
+                                    <span class="option-text">
+                                        <span class="option-icon">🔄</span>
+                                        <span class="option-content">
+                                            <strong>Daily repeat</strong>
+                                            <small>Every day</small>
+                                        </span>
+                                    </span>
+                                </label>
+                            </div>
+                            
+                            <div class="option-group">
+                                <label class="option-label">
+                                    <input type="radio" name="schedule-type" value="custom" />
+                                    <span class="option-text">
+                                        <span class="option-icon">📋</span>
+                                        <span class="option-content">
+                                            <strong>Custom repeat</strong>
+                                            <small>Select specific days</small>
+                                        </span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div id="custom-days-section" class="custom-days-section" style="display: none;">
+                            <label class="section-label">Repeat on:</label>
+                            <div class="days-grid">
+                                <label class="day-checkbox">
+                                    <input type="checkbox" value="0" />
+                                    <span class="day-label">Mon</span>
+                                </label>
+                                <label class="day-checkbox">
+                                    <input type="checkbox" value="1" />
+                                    <span class="day-label">Tue</span>
+                                </label>
+                                <label class="day-checkbox">
+                                    <input type="checkbox" value="2" />
+                                    <span class="day-label">Wed</span>
+                                </label>
+                                <label class="day-checkbox">
+                                    <input type="checkbox" value="3" />
+                                    <span class="day-label">Thu</span>
+                                </label>
+                                <label class="day-checkbox">
+                                    <input type="checkbox" value="4" />
+                                    <span class="day-label">Fri</span>
+                                </label>
+                                <label class="day-checkbox">
+                                    <input type="checkbox" value="5" />
+                                    <span class="day-label">Sat</span>
+                                </label>
+                                <label class="day-checkbox">
+                                    <input type="checkbox" value="6" />
+                                    <span class="day-label">Sun</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="form-actions">
+                        <button type="button" id="clear-form" class="btn-secondary">Clear Form</button>
+                        <button type="submit" id="add-task" class="btn-primary">
+                            <span class="btn-icon">➕</span>
+                            <span class="btn-text">Add Task</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+        <!-- AI Task Generator Section -->
+        <section id="ai-task-generator-section" class="card-section">
+            <div class="section-header">
+                <h2><span class="section-icon">🤖</span> AI Task Generator</h2>
+                <button class="section-toggle collapsed" data-section="ai-task-generator" id="ai-task-toggle-btn">
+                    <span class="toggle-arrow">▶</span>
+                </button>
+            </div>
+            <div class="section-content collapsed" id="ai-task-generator-content">
+                <form id="ai-task-form">
+                    <div class="form-section">
+                        <h3>Project Details</h3>
+                        <div class="form-row">
+                            <label for="ai-project-desc">Project Description</label>
+                            <textarea id="ai-project-desc" placeholder="Describe your project here (title, context, deadline...)"></textarea>
+                        </div>
+                        <div class="form-row">
+                            <label for="ai-project-file">Upload File</label>
+                            <div class="file-upload-container styled-upload" id="file-upload-dropzone">
+                                <span class="file-upload-icon">📎</span>
+                                <input type="file" id="ai-project-file" name="file" class="file-upload-input" accept=".pdf,.txt,.csv,.xlsx,.xls,.doc,.docx,.png,.jpg,.jpeg,.gif,.bmp,.svg,.json,.js,.ts,.py,.java,.c,.cpp,.cs,.html,.css,.md,.xml,.yml,.yaml,.zip,.rar,.7z,.tar,.gz,.mp3,.mp4,.wav,.ogg,.webm,.avi,.mov,.ppt,.pptx,.rtf,.log,.ini,.bat,.sh,.php,.rb,.go,.rs,.swift,.kt,.dart,.sql,.db,.sqlite,.h,.hpp,.m,.mm,.pl,.lua,.asm,.s,.f90,.f,.r,.sas,.jsp,.asp,.aspx,.vue,.jsx,.tsx,.lock,.env,.conf,.cfg,.toml,.ps1,.vbs,.wsf,.jsonl,.ipynb,.tex,.bib,.sty,.cls,.dtx,.ins,.out,.toc,.lof,.lot,.fls,.fdb_latexmk,.synctex.gz,.bbl,.blg,.acn,.glo,.ist,.acr,.alg,.glg,.gls,.glsdefs,.ist,.xdy' />
+                                <div class="file-upload-text">
+                                    <div class="file-name" id="selected-file-name">Choose a file or drag it here</div>
+                                    <div class="file-hint">Supported: text, images, pdf, excel, code, etc.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <label for="ai-project-sheet">Google Sheet link</label>
+                            <div class="url-input-container">
+                                <span class="url-input-icon">🔗</span>
+                                <input type="url" id="ai-project-sheet" placeholder="Paste Google Sheet URL here" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" id="ai-generate-btn" class="btn-primary" style="display: none;">
+                            <span class="btn-icon">✨</span>
+                            <span class="btn-text">Generate Tasks</span>
+                        </button>
+                    </div>
+                </form>
+                <div id="ai-task-results" class="ai-task-results"></div>
+            </div>
+        </section>
+        <!-- Week Navigation -->
+        <section id="week-navigation" class="week-nav-section">
+            <div class="week-nav-container">
+                <ul id="day-nav" class="day-nav">
+                    <li data-day="0">Monday</li>
+                    <li data-day="1">Tuesday</li>
+                    <li data-day="2">Wednesday</li>
+                    <li data-day="3">Thursday</li>
+                    <li data-day="4">Friday</li>
+                    <li data-day="5">Saturday</li>
+                    <li data-day="6">Sunday</li>
+                </ul>
+            </div>
+        </section>
+        
+        <!-- Tasks Display Section -->
+        <section id="tasks-section" class="card-section">
+            <h2 id="tasks-day-title"></h2>
+            <div class="tasks-header">
+                <button id="delete-all-tasks-btn" class="btn-danger" style="display: none;">
+                    <span class="btn-icon">🗑️</span>
+                    <span class="btn-text">Delete All Tasks for Today</span>
+                </button>
+            </div>
+            <ul id="tasks-list"></ul>
+        </section>
+
+        <!-- Calendar Section -->
+        <section id="calendar-section" class="card-section">
+            <div class="section-header">
+                <h2><span class="section-icon">📅</span> Task Calendar</h2>
+                <button class="section-toggle collapsed" data-section="calendar">
+                    <span class="toggle-arrow">▶</span>
+                </button>
+            </div>
+            <div class="section-content collapsed" id="calendar-content">
+                <div id="calendar-container"></div>
+            </div>
+        </section>
+        
+        <!-- Tools Section -->
+        <aside id="tools-section" class="card-section">
+            <h2><span class="section-icon">🛠️</span> Tools</h2>
+            <button id="focus-mode-btn" class="tool-btn">
+                <span class="icon">🔍</span> Focus Mode - Tomodoro technique
+            </button>
+            
+            <!-- Quick Notes Section -->
+            <div class="quick-notes-section">
+                <div class="quick-notes-header">
+                    <h3><span class="notes-icon">📝</span> Quick Notes</h3>
+                    <button id="add-note-btn" class="add-note-btn" title="Add New Note">
+                        <span class="add-icon">+</span>
+                    </button>
+                </div>
+                <div id="quick-notes-container" class="quick-notes-container">
+                    <!-- Notes will be dynamically added here -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Donate Section -->
+        <section id="donate-section" class="card-section">
+            <div class="section-header">
+                <h2><span class="section-icon">💝</span> Support TaskExtreme</h2>
+                <button class="section-toggle collapsed" data-section="donate">
+                    <span class="toggle-arrow">▶</span>
+                </button>
+            </div>
+            <div class="section-content collapsed" id="donate-content">
+                <div class="donate-intro">
+                    <p>If TaskExtreme has helped you stay organized and productive, consider supporting its development! Your donation helps keep this tool free and continuously improved.</p>
+                </div>
+                
+                <div class="donation-options">
+                    <!-- PayPal Option -->
+                    <div class="donation-option">
+                        <div class="donation-header">
+                            <span class="donation-icon">💳</span>
+                            <h3>PayPal</h3>
+                        </div>
+                        <div class="donation-content">
+                            <p>Quick and secure payment via PayPal</p>
+                            <div class="paypal-section">
+                                <div class="custom-amount">
+                                    <label for="custom-amount">Custom Amount (USD):</label>
+                                    <input type="number" id="custom-amount" placeholder="5.00" min="1" step="0.01" value="5.00">
+                                </div>
+                                <div class="paypal-buttons">
+                                    <button class="donate-btn paypal-btn" data-amount="5">
+                                        <span class="btn-icon">💳</span>
+                                        <span class="btn-text">Donate $5</span>
+                                    </button>
+                                    <button class="donate-btn paypal-btn" data-amount="10">
+                                        <span class="btn-icon">💳</span>
+                                        <span class="btn-text">Donate $10</span>
+                                    </button>
+                                    <button class="donate-btn paypal-btn" data-amount="20">
+                                        <span class="btn-icon">💳</span>
+                                        <span class="btn-text">Donate $20</span>
+                                    </button>
+                                    <button class="donate-btn paypal-btn custom" id="paypal-custom-btn">
+                                        <span class="btn-icon">💳</span>
+                                        <span class="btn-text">Donate Custom Amount</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CIH Bank Option -->
+                    <div class="donation-option">
+                        <div class="donation-header">
+                            <span class="donation-icon">🏦</span>
+                            <h3>CIH Bank Transfer</h3>
+                        </div>
+                        <div class="donation-content">
+                            <p>Direct bank transfer for Moroccan users</p>
+                            <div class="bank-details">
+                                <div class="bank-info">
+                                    <div class="info-row">
+                                        <span class="info-label">Bank:</span>
+                                        <span class="info-value">CIH Bank</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">Account Name:</span>
+                                        <span class="info-value">MOHAMMED REQASSE</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">RIB:</span>
+                                        <span class="info-value copyable" id="rib-number">230 590 4107758211032400 36</span>
+                                        <button class="copy-btn" data-target="rib-number" title="Copy RIB">
+                                            <span class="copy-icon">📋</span>
+                                        </button>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">IBAN:</span>
+                                        <span class="info-value copyable" id="iban-number">MA64 2305 9041 0775 8211 0324 0036</span>
+                                        <button class="copy-btn" data-target="iban-number" title="Copy IBAN">
+                                            <span class="copy-icon">📋</span>
+                                        </button>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">SWIFT:</span>
+                                        <span class="info-value copyable" id="swift-code">CIHMMAMC</span>
+                                        <button class="copy-btn" data-target="swift-code" title="Copy SWIFT Code">
+                                            <span class="copy-icon">📋</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="qr-section">
+                                    <img src="./images/cih-qr-code.png" alt="CIH Bank QR Code" class="qr-code-image">
+                                    <small>Scan with your bank's mobile app</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="donate-footer">
+                    <p>Thank you for your support! 🙏</p>
+                    <p><small>Your donations help maintain and improve TaskExtreme for everyone.</small></p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer id="footer-contact">
+        <div class="footer-content">
+            <div class="footer-section">
+                <div class="profile-section">
+                    <img src="https://i.ibb.co/LXLK3D5c/Whats-App-Image-2025-04-11-at-15-03-59-12f7a20f-removebg-preview.png" alt="Mohammed Reqasse" class="profile-image">
+                    <div class="profile-info">
+                        <h3>Mohammed Reqasse</h3>
+                        <p>Network and Telecommunications Engineering Student</p>
+                        <a href="https://moreqasse.github.io/CV/" target="_blank" rel="noopener" class="resume-link">View Resume</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Contact Information</h4>
+                <div class="contact-links">
+                    <a href="mailto:reqasse@gmail.com" class="contact-link">
+                        <img src="https://icones.pro/wp-content/uploads/2021/03/icone-gmail-logo-png-grise.png" alt="Email" class="contact-icon">
+                        <span>reqasse@gmail.com</span>
+                    </a>
+                    <a href="tel:+212700821340" class="contact-link">
+                        <span class="contact-icon">📞</span>
+                        <span>+212-700-82-13-40</span>
+                    </a>
+                    <a href="https://wa.me/212700821340" class="contact-link" target="_blank" rel="noopener">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" class="contact-icon">
+                        <span>WhatsApp</span>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Social Links</h4>
+                <div class="social-links">
+                    <a href="https://www.linkedin.com/in/mohammed-reqasse-860a03219/" class="social-link" target="_blank" rel="noopener">
+                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQVwpVlXEdO4SYUobUhd4C0DxLhsil1mNLpiw&s" alt="LinkedIn" class="social-icon">
+                        <span>LinkedIn</span>
+                    </a>
+                    <a href="https://github.com/MOREQASSE" class="social-link" target="_blank" rel="noopener">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" alt="GitHub" class="social-icon github-icon">
+                        <span>GitHub</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2025 TaskExtreme. Created by Mohammed Reqasse
+                All rights reserved.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Edit Task Modal -->
+    <div id="edit-task-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><span class="section-icon">✏️</span> Edit Task</h2>
+                <button id="close-edit-modal" class="modal-close-btn">&times;</button>
+            </div>
+            
+            <form id="edit-task-form">
+                <input type="hidden" id="edit-task-id" />
+                
+                <!-- Task Details Section -->
+                <div class="form-section">
+                    <h3>Task Information</h3>
+                    <div class="form-row">
+                        <label for="edit-task-title">Task Title *</label>
+                        <input type="text" id="edit-task-title" placeholder="What needs to be done?" required />
+                    </div>
+                    <div class="form-row">
+                        <label for="edit-task-details">Description</label>
+                        <textarea id="edit-task-details" placeholder="Add any additional details, notes, or context..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Category & Priority Section -->
+                <div class="form-section">
+                    <h3>🏷️ Category & Priority</h3>
+                    <div class="form-row category-priority-row">
+                        <div class="category-group">
+                            <label for="edit-task-category">Category</label>
+                            <select id="edit-task-category" required>
+                                <option value="">Select a category</option>
+                                <option value="work" data-color="#3b82f6">💼 Work</option>
+                                <option value="personal" data-color="#10b981">👤 Personal</option>
+                                <option value="health" data-color="#ef4444">🏥 Health</option>
+                                <option value="education" data-color="#8b5cf6">📚 Education</option>
+                                <option value="finance" data-color="#f59e0b">💰 Finance</option>
+                                <option value="home" data-color="#06b6d4">🏠 Home</option>
+                                <option value="social" data-color="#ec4899">👥 Social</option>
+                                <option value="hobby" data-color="#84cc16">🎨 Hobby</option>
+                            </select>
+                        </div>
+                        <div class="priority-group">
+                            <label for="edit-task-priority">Priority</label>
+                            <select id="edit-task-priority" required>
+                                <option value="">Select priority</option>
+                                <option value="high" data-color="#ef4444">🔴 High</option>
+                                <option value="medium" data-color="#f59e0b">🟡 Medium</option>
+                                <option value="low" data-color="#10b981">🟢 Low</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Time & Date Section -->
+                <div class="form-section">
+                    <h3>⏰ Time & Date</h3>
+                    <div class="form-row time-row">
+                        <div class="time-group">
+                            <label for="edit-task-time-start">Start Time</label>
+                            <input type="time" id="edit-task-time-start" />
+                        </div>
+                        <div class="time-separator">to</div>
+                        <div class="time-group">
+                            <label for="edit-task-time-end">End Time</label>
+                            <input type="time" id="edit-task-time-end" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label for="edit-task-due-date">Due Date</label>
+                        <input type="date" id="edit-task-due-date" />
+                    </div>
+                </div>
+
+                <!-- Scheduling Section -->
+                <div class="form-section">
+                    <h3>📅 Scheduling</h3>
+                    <div class="scheduling-options">
+                        <div class="option-group">
+                            <label class="option-label">
+                                <input type="radio" name="edit-schedule-type" value="once" checked />
+                                <span class="option-text">
+                                    <span class="option-icon">📌</span>
+                                    <span class="option-content">
+                                        <strong>One-time task</strong>
+                                        <small>Add to current date</small>
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+                        
+                        <div class="option-group">
+                            <label class="option-label">
+                                <input type="radio" name="edit-schedule-type" value="everyday" />
+                                <span class="option-text">
+                                    <span class="option-icon">🔄</span>
+                                    <span class="option-content">
+                                        <strong>Daily repeat</strong>
+                                        <small>Every day</small>
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+                        
+                        <div class="option-group">
+                            <label class="option-label">
+                                <input type="radio" name="edit-schedule-type" value="custom" />
+                                <span class="option-text">
+                                    <span class="option-icon">📋</span>
+                                    <span class="option-content">
+                                        <strong>Custom repeat</strong>
+                                        <small>Select specific days</small>
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="edit-custom-days-section" class="custom-days-section" style="display: none;">
+                        <label class="section-label">Repeat on:</label>
+                        <div class="days-grid">
+                            <label class="day-checkbox">
+                                <input type="checkbox" value="0" />
+                                <span class="day-label">Mon</span>
+                            </label>
+                            <label class="day-checkbox">
+                                <input type="checkbox" value="1" />
+                                <span class="day-label">Tue</span>
+                            </label>
+                            <label class="day-checkbox">
+                                <input type="checkbox" value="2" />
+                                <span class="day-label">Wed</span>
+                            </label>
+                            <label class="day-checkbox">
+                                <input type="checkbox" value="3" />
+                                <span class="day-label">Thu</span>
+                            </label>
+                            <label class="day-checkbox">
+                                <input type="checkbox" value="4" />
+                                <span class="day-label">Fri</span>
+                            </label>
+                            <label class="day-checkbox">
+                                <input type="checkbox" value="5" />
+                                <span class="day-label">Sat</span>
+                            </label>
+                            <label class="day-checkbox">
+                                <input type="checkbox" value="6" />
+                                <span class="day-label">Sun</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="form-actions">
+                    <button type="button" id="cancel-edit" class="btn-secondary">Cancel</button>
+                    <button type="submit" id="save-edit" class="btn-primary">
+                        <span class="btn-icon">💾</span>
+                        <span class="btn-text">Save Changes</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts in correct order -->
+    <script src="./scripts/theme.js"></script>
+    <script src="./scripts/collapsible-sections.js"></script>
+    <script src="./scripts/progress-dashboard.js"></script>
+    <script src="./scripts/drag-drop.js"></script>
+    <script src="./scripts/pdf-export.js"></script>
+    <script src="./scripts/app.js"></script>
+    <script src="./scripts/calendar2.js"></script>
+    <script src="./scripts/focus-mode.js"></script>
+    <script src="./scripts/quick-notes.js"></script>
+    <script src="./scripts/donate.js"></script>
+    <script>
+    // Drag-and-drop and file name display for file upload
+    const fileInput = document.getElementById('ai-project-file');
+    const dropzone = document.getElementById('file-upload-dropzone');
+    const fileNameDisplay = document.getElementById('selected-file-name');
+
+    if (fileInput && dropzone && fileNameDisplay) {
+        // Click on dropzone opens file picker
+        dropzone.addEventListener('click', (e) => {
+            if (e.target === dropzone || e.target.classList.contains('file-upload-text') || e.target.classList.contains('file-upload-icon')) {
+                fileInput.click();
+            }
+        });
+        // Show selected file name
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files && fileInput.files.length > 0) {
+                fileNameDisplay.textContent = fileInput.files[0].name;
+            } else {
+                fileNameDisplay.textContent = 'Choose a file or drag it here';
+            }
+        });
+        // Drag and drop support
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.add('dragover');
+            });
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.remove('dragover');
+            });
+        });
+        dropzone.addEventListener('drop', (e) => {
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        });
+    }
+
+    // Show/hide Generate Tasks button based on section toggle (robust with MutationObserver)
+    const aiSectionContent = document.getElementById('ai-task-generator-content');
+    const aiGenerateBtn = document.getElementById('ai-generate-btn');
+
+    function updateAIGenerateBtnVisibility() {
+        if (aiSectionContent && aiGenerateBtn) {
+            if (!aiSectionContent.classList.contains('collapsed')) {
+                aiGenerateBtn.style.display = '';
+            } else {
+                aiGenerateBtn.style.display = 'none';
+            }
+        }
+    }
+    // Initial state
+    updateAIGenerateBtnVisibility();
+    // Observe class changes
+    if (aiSectionContent && aiGenerateBtn && window.MutationObserver) {
+        const observer = new MutationObserver(updateAIGenerateBtnVisibility);
+        observer.observe(aiSectionContent, { attributes: true, attributeFilter: ['class'] });
+    }
+    </script>
+</body>
+</html>
