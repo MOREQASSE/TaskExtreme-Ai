@@ -32,13 +32,9 @@ To enable AI task generation:
    Create a `.env` file in the root directory:
    ```
    PORT=3001
-   GITHUB_TOKEN=your_github_token_here
    ```
 
-3. **Get a GitHub token:**
-   - Go to https://github.com/settings/tokens
-   - Create a new token with appropriate permissions
-   - Add it to your `.env` file
+3. **Start the AI backend:**
 
 4. **Start the AI backend:**
    ```bash

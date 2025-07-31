@@ -25,8 +25,7 @@ const token = process.env.GITHUB_TOKEN; // GitHub token must be provided via env
 // Check for required environment variables
 if (!token) {
   console.error('ERROR: GITHUB_TOKEN environment variable is not set!');
-  console.error('Please create a .env file with your GitHub token:');
-  console.error('GITHUB_TOKEN=your_github_token_here');
+  console.error('Please set the GITHUB_TOKEN environment variable');
   console.error('Get your token from: https://github.com/settings/tokens');
   process.exit(1);
 }
