@@ -1,8 +1,8 @@
-// Client-side AI task generation using Azure AI SDK
+// Client-side AI task generation using GitHub's Copilot API
 class AITaskGenerator {
   constructor() {
-    this.endpoint = 'https://models.github.ai/inference';
-    this.model = 'openai/gpt-4.1';
+    this.apiUrl = 'https://api.github.com/copilot/completions';
+    this.model = 'gpt-4';
     this.token = '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';
   }
 
@@ -11,111 +11,141 @@ class AITaskGenerator {
       const now = new Date();
       const currentDate = now.toISOString().split('T')[0];
       
-      const systemPrompt = this.getSystemPrompt(currentDate);
-      
-      // Initialize the Azure AI client
-      const client = this.getAzureClient();
-      if (!client) {
-        throw new Error('Failed to initialize AI client');
-      }
+      const systemPrompt = `You are an AI assistant that helps break down projects into actionable tasks. 
+For the given project, generate specific, actionable tasks with accurate timing of the day depending on task demands or if the user specify it the number of tasks should be dynamic and friendly and helpful to devise complex projects to small manageable tasks. make sure you strictly follow the following JSON format with not a single word outside of it:
 
-      // Make the API request using Azure SDK
-      const response = await client.path("/chat/completions").post({
-        body: {
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: projectDesc }
-          ],
-          temperature: 0.7,
-          max_tokens: 2000,
-          model: this.model
-        }
+{
+  "tasks": [
+    {
+      "title": "Task title",
+      "description": "Detailed description of the task",
+      "priority": "high/medium/low",
+      "estimatedTime": "X hours/days",
+      "category": "work/personal/health/education/finance/home/social/hobby/Uncategorized"
+    }
+  ]
+}
+
+IMPORTANT: Only respond with valid JSON, no other text.`;
+
+      const requestBody = {
+        model: this.model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Project: ${projectDesc}` }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
+      };
+
+      console.log('Sending request to GitHub Copilot API:', JSON.stringify(requestBody, null, 2));
+
+      const response = await fetch(this.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-GitHub-Api-Version': '2022-11-28'
+        },
+        body: JSON.stringify(requestBody)
       });
 
-      console.log('AI Response status:', response.status);
-      console.log('AI Response body:', JSON.stringify(response.body, null, 2));
-
-      // Handle the response
-      if (response.status !== 200) {
-        console.error('Unexpected response status:', response.status);
-        throw new Error(`AI service returned status ${response.status}`);
-      }
-
-      const aiResponse = response.body;
-      if (aiResponse && aiResponse.choices && aiResponse.choices[0] && aiResponse.choices[0].message && aiResponse.choices[0].message.content) {
-        try {
-          const parsed = JSON.parse(aiResponse.choices[0].message.content);
-          if (parsed.tasks && Array.isArray(parsed.tasks)) {
-            return parsed.tasks.map(task => ({
-              ...task,
-              id: task.id || `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-              category: task.category || 'Uncategorized',
-              priority: task.priority || 'medium',
-              date: task.date || currentDate,
-              timeStart: task.timeStart || '09:00',
-              timeEnd: task.timeEnd || '10:00',
-              repeat: task.repeat || null,
-              dueDate: task.dueDate || null,
-              completed: task.completed || false
-            }));
-          }
-        } catch (e) {
-          console.error('Failed to parse AI response:', e);
-          // Fall through to generate fallback tasks
-        }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Failed to generate tasks');
       }
       
-      // If we get here, the response wasn't in the expected format
-      console.log('Generating fallback tasks due to unexpected response format');
-      return this.generateFallbackTasks(projectDesc);
+      const result = await response.json();
+      return this.parseAITasks(result, currentDate);
       
     } catch (error) {
       console.error('AI Task Generation Error:', error);
-      // Generate fallback tasks if API fails
-      return this.generateFallbackTasks(projectDesc);
+      // Return a user-friendly error task
+      return [{
+        title: 'Error generating tasks',
+        description: error.message || 'Failed to generate tasks. Please try again later.',
+        priority: 'high',
+        category: 'Uncategorized',
+        estimatedTime: '5 minutes'
+      }];
     }
   }
   
-  // Helper method to get the Azure client
-  getAzureClient() {
+  parseAITasks(aiResponse, currentDate) {
     try {
-      // In a real implementation, we'd use the Azure SDK
-      // For client-side, we'll mock the client with fetch
-      return {
-        path: (path) => ({
-          post: async (options) => {
-            const response = await fetch(`${this.endpoint}${path}`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.token}`,
-                'Accept': 'application/json'
-              },
-              body: JSON.stringify({
-                ...options.body,
-                // Add any required Azure-specific fields
-              })
-            });
-            
-            if (!response.ok) {
-              const error = await response.text().catch(() => ({}));
-              return {
-                status: response.status,
-                body: { error: error || 'Unknown error' }
-              };
-            }
-            
-            const data = await response.json().catch(() => ({}));
-            return {
-              status: response.status,
-              body: data
-            };
-          }
-        })
-      };
+      // Extract the content from the response
+      let content = '';
+      
+      // Handle different response formats
+      if (aiResponse.choices?.[0]?.message?.content) {
+        content = aiResponse.choices[0].message.content;
+      } else if (aiResponse.completion) {
+        content = aiResponse.completion;
+      } else if (aiResponse.choices?.[0]?.text) {
+        content = aiResponse.choices[0].text;
+      } else {
+        throw new Error('No valid response content found');
+      }
+      
+      // Clean the response
+      const cleanContent = content
+        .replace(/```(?:json)?\n?([\s\S]*?)\n?```/g, '$1')  // Remove code blocks
+        .replace(/^[^{]*/, '')  // Remove anything before the first {
+        .replace(/[^}]*$/, '')  // Remove anything after the last }
+        .trim();
+      
+      if (!cleanContent) {
+        throw new Error('No valid JSON found in response');
+      }
+      
+      // Parse the JSON content
+      const parsed = JSON.parse(cleanContent);
+      
+      // Process tasks from the response
+      let tasks = [];
+      if (Array.isArray(parsed)) {
+        tasks = parsed; // Direct array of tasks
+      } else if (parsed.tasks && Array.isArray(parsed.tasks)) {
+        tasks = parsed.tasks; // Object with tasks array
+      } else if (typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+        tasks = [parsed]; // Single task object
+      } else {
+        throw new Error('Unexpected response format');
+      }
+      
+      // Format tasks for the app
+      return tasks.map((task, index) => ({
+        id: `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        title: task.title || `Task ${index + 1}`,
+        details: task.description || task.details || '',
+        category: task.category || 'Uncategorized',
+        priority: task.priority || 'medium',
+        timeStart: task.timeStart || '09:00',
+        timeEnd: task.timeEnd || '10:00',
+        date: task.date || currentDate,
+        dueDate: task.dueDate || '',
+        repeat: task.repeat || null,
+        completed: task.completed || false,
+        estimatedTime: task.estimatedTime || '30 minutes'
+      }));
+      
     } catch (error) {
-      console.error('Error initializing Azure client:', error);
-      return null;
+      console.error('Error parsing AI response:', error);
+      // Fallback: Return a generic error task
+      return [{
+        id: `task_${Date.now()}_error`,
+        title: 'Error processing tasks',
+        details: 'The AI response could not be processed. Please try again with a different description.',
+        priority: 'high',
+        category: 'Uncategorized',
+        timeStart: '09:00',
+        timeEnd: '10:00',
+        date: currentDate,
+        repeat: null,
+        completed: false,
+        estimatedTime: '5 minutes'
+      }];
     }
   }
   
