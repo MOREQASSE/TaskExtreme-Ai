@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Task Generator Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-height: 100px;
+            white-space: pre-wrap;
+            background-color: #f9f9f9;
+        }
+        .loading {
+            display: none;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Task Generator Test</h1>
+        <div>
+            <h3>Enter Project Description:</h3>
+            <textarea id="project-desc" placeholder="E.g., Plan a birthday party for next Friday with 20 guests"></textarea>
+        </div>
+        <button id="generate-btn">Generate Tasks</button>
+        <div id="loading" class="loading">Generating tasks, please wait...</div>
+        <div>
+            <h3>Generated Tasks:</h3>
+            <div id="result">Generated tasks will appear here...</div>
+        </div>
+    </div>
+
+    <!-- Include the AI client -->
+    <script src="scripts/ai-client.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const generateBtn = document.getElementById('generate-btn');
+            const projectDesc = document.getElementById('project-desc');
+            const resultDiv = document.getElementById('result');
+            const loadingDiv = document.getElementById('loading');
+
+            generateBtn.addEventListener('click', async () => {
+                const description = projectDesc.value.trim();
+                if (!description) {
+                    resultDiv.textContent = 'Please enter a project description';
+                    return;
+                }
+
+                try {
+                    // Show loading state
+                    loadingDiv.style.display = 'block';
+                    resultDiv.textContent = '';
+                    
+                    // Initialize the AI generator
+                    const aiGenerator = new AITaskGenerator();
+                    
+                    // Generate tasks
+                    const tasks = await aiGenerator.generateTasks(description);
+                    
+                    // Display results
+                    if (tasks && tasks.length > 0) {
+                        resultDiv.textContent = JSON.stringify(tasks, null, 2);
+                    } else {
+                        resultDiv.textContent = 'No tasks were generated. Please try again with a different description.';
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    resultDiv.textContent = `Error: ${error.message || 'Failed to generate tasks'}`;
+                } finally {
+                    // Hide loading state
+                    loadingDiv.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
