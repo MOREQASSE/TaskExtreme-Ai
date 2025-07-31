@@ -3,7 +3,7 @@ class AITaskGenerator {
   constructor() {
     this.endpoint = 'https://models.github.ai/inference';
     this.model = 'openai/gpt-4.1';
-    this.token = 'TokenPlaceholder';
+    this.token = '';
   }
 
   async generateTasks(projectDesc) {
