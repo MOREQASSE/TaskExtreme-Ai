@@ -64,7 +64,7 @@
         <div class="navbar-content">
             <!-- Logo -->
             <div class="navbar-left">
-                <img src="images/icon.png" alt="TaskExtreme Logo" class="logo-icon" style="height: 6em; vertical-align: middle;" />
+                <img src="images/icon.png" alt="TaskExtreme Logo" class="logo-icon" style="height: 4em; vertical-align: middle;" />
             </div>
             
             <!-- Date Navigation -->
@@ -438,24 +438,6 @@
                         <div class="form-row">
                             <label for="ai-project-desc">Project Description</label>
                             <textarea id="ai-project-desc" placeholder="Describe your project here (title, context, deadline...)"></textarea>
-                        </div>
-                        <div class="form-row">
-                            <label for="ai-project-file">Upload File</label>
-                            <div class="file-upload-container styled-upload" id="file-upload-dropzone">
-                                <span class="file-upload-icon">📎</span>
-                                <input type="file" id="ai-project-file" name="file" class="file-upload-input" accept=".pdf,.txt,.csv,.xlsx,.xls,.doc,.docx,.png,.jpg,.jpeg,.gif,.bmp,.svg,.json,.js,.ts,.py,.java,.c,.cpp,.cs,.html,.css,.md,.xml,.yml,.yaml,.zip,.rar,.7z,.tar,.gz,.mp3,.mp4,.wav,.ogg,.webm,.avi,.mov,.ppt,.pptx,.rtf,.log,.ini,.bat,.sh,.php,.rb,.go,.rs,.swift,.kt,.dart,.sql,.db,.sqlite,.h,.hpp,.m,.mm,.pl,.lua,.asm,.s,.f90,.f,.r,.sas,.jsp,.asp,.aspx,.vue,.jsx,.tsx,.lock,.env,.conf,.cfg,.toml,.ps1,.vbs,.wsf,.jsonl,.ipynb,.tex,.bib,.sty,.cls,.dtx,.ins,.out,.toc,.lof,.lot,.fls,.fdb_latexmk,.synctex.gz,.bbl,.blg,.acn,.glo,.ist,.acr,.alg,.glg,.gls,.glsdefs,.ist,.xdy' />
-                                <div class="file-upload-text">
-                                    <div class="file-name" id="selected-file-name">Choose a file or drag it here</div>
-                                    <div class="file-hint">Supported: text, images, pdf, excel, code, etc.</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <label for="ai-project-sheet">Google Sheet link</label>
-                            <div class="url-input-container">
-                                <span class="url-input-icon">🔗</span>
-                                <input type="url" id="ai-project-sheet" placeholder="Paste Google Sheet URL here" />
-                            </div>
                         </div>
                     </div>
                     <div class="form-actions">
@@ -869,6 +851,10 @@
     <script>
     // Drag-and-drop and file name display for file upload
     const fileInput = document.getElementById('ai-project-file');
+    </script>
+    <script src="./scripts/file-to-task.js"></script>
+    <script>
+    // (reopen script for following JS)
     const dropzone = document.getElementById('file-upload-dropzone');
     const fileNameDisplay = document.getElementById('selected-file-name');
 

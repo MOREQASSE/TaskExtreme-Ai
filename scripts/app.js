@@ -1275,6 +1275,61 @@ function init() {
   renderTasks();
   updateStreakCounter();
   
+  // PDF-to-task extraction for AI Task Generator
+  document.addEventListener('DOMContentLoaded', function () {
+    const fileInput = document.getElementById('ai-project-file');
+    const resultsDiv = document.getElementById('ai-task-results');
+    if (fileInput) {
+      fileInput.addEventListener('change', async function (e) {
+        const file = e.target.files && e.target.files[0];
+        if (file && file.type === 'application/pdf') {
+          if (resultsDiv) resultsDiv.innerHTML = '<div class="ai-loading">⏳ Extracting tasks from PDF...</div>';
+          try {
+            const tasks = await window.extractTasksFromFile(file, {
+              azureClient: window.azureClient,
+              githubToken: window.githubToken
+            });
+            if (Array.isArray(tasks) && tasks.length > 0) {
+              let addedCount = 0;
+              tasks.forEach(aiTask => {
+                const newTask = {
+                  id: 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                  title: aiTask.title || 'AI Generated Task',
+                  details: aiTask.description || '',
+                  timeStart: aiTask.timeStart || '',
+                  timeEnd: aiTask.timeEnd || '',
+                  date: aiTask.date || (window.currentDate || ''),
+                  dueDate: aiTask.dueDate || '',
+                  category: aiTask.category || 'Uncategorized',
+                  priority: aiTask.priority || 'medium',
+                  repeat: aiTask.repeat || null,
+                  days: aiTask.days || [],
+                  completed: false
+                };
+                if (window.tasks && Array.isArray(window.tasks)) {
+                  window.tasks.push(newTask);
+                  addedCount++;
+                }
+              });
+              if (typeof saveTasks === 'function') saveTasks();
+              if (typeof renderTasks === 'function') renderTasks();
+              if (window.renderCalendar && typeof window.renderCalendar === 'function') window.renderCalendar();
+              if (resultsDiv) {
+                resultsDiv.innerHTML = `<div class="ai-success"><p>✅ Successfully added ${addedCount} AI-generated tasks from PDF!</p><button onclick="this.parentElement.innerHTML = ''" class="btn-secondary">Clear</button></div>`;
+              }
+            } else {
+              if (resultsDiv) resultsDiv.innerHTML = '<div class="ai-error">❌ No tasks could be extracted from this PDF.</div>';
+            }
+          } catch (err) {
+            if (resultsDiv) resultsDiv.innerHTML = `<div class="ai-error">❌ Error: ${err.message || 'Failed to extract tasks from PDF.'}</div>`;
+          } finally {
+            fileInput.value = '';
+          }
+        }
+      });
+    }
+  });
+  
   // Set up AI form
   const aiForm = document.getElementById('ai-task-form');
   if (aiForm) {
