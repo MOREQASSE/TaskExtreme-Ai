@@ -3,7 +3,10 @@ class AITaskGenerator {
     constructor() {
       this.endpoint = 'https://models.github.ai/inference';
       this.model = 'openai/gpt-4.1';
-      this.token = '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';
+      // IMPORTANT: The token below should be injected as an environment variable (GITHUB_TOKEN) during deployment.
+      // For Netlify/Vercel, set GITHUB_TOKEN in your dashboard, and replace this at build/deploy time.
+      this.token = GITHUB_TOKEN; // <-- Replace with injected value at build/deploy
+      // Note: Do NOT expose secrets in client-side code for production. Use serverless functions to proxy requests securely.
     }
   
     async generateTasks(projectDesc) {
